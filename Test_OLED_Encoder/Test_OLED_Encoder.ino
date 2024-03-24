@@ -46,7 +46,8 @@ void loop() {
     if (selectedItem == 3) {
       selectedItem = 1; // If we reach the last element from the menu, the selectedItem is reset to the first element
     }
-  }  
+  } 
+  lastEncoderValue = encoderValue; // The last value from the encoder is updated
   Serial.println("Selected:" + String(selectedItem)); // To debug
   delay(150); // We add a delay between loops for stability, while still having a responsive display
 }
