@@ -38,7 +38,7 @@ void setup() {
 
 void loop() {
   displayMenu();
-  handleMenuItemSelection();
+  handleMenuItemSelection(selectedItem);
   encoderValue = abs(encoderValue % 3); 
   Serial.println(encoderValue); // To debug
   if (encoderValue != lastEncoderValue) { // If we turn the encoder, then the selectedItem variable is increased
@@ -103,7 +103,7 @@ void switchButton() {
     currentTime = millis(); // The function waits for the debounce delay to pass, and then we read the value of the switch again
   }
   if (Switch == HIGH) { // If, after the debounce delay, the Switch is still high, we have effectively pressed the button
-    enter_menu = true; // We enter the menu we were currently in
+    enterMenu = true; // We enter the menu we were currently in
   }
 }
 
