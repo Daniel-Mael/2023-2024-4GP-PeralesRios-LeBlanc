@@ -1,15 +1,7 @@
-/*
-  Contrôle d'un écran OLED
-  Auteur :        Jérôme TOMSKI (https://passionelectronique.fr/)
-  Créé le :       26.07.2021
-
-  Modifié par Daniel PERALES RIOS et Maël LE BLANC, étudiants de l'INSA Toulouse
-*/
-
 #include <Adafruit_SSD1306.h>
 
-// ***ENCODER***
-//----------------------------------------------
+// Parameter definition
+/////////////////////////////////////////////////////////////////////////
 #define encoderPinA 2 // CLK Output A
 #define encoderPinB 4 // DT Output B
 #define Switch 5 // Switch connection
@@ -20,10 +12,7 @@ long lastEncoderValue = 0;
 
 long lastDebounceTime = 0;
 long debounceDelay = 120;
-//----------------------------------------------
 
-//***OLED***
-//----------------------------------------------
 #define nombreDePixelsEnLargeur 128
 #define nombreDePixelsEnHauteur 64
 #define brocheResetOLED -1
@@ -31,46 +20,37 @@ long debounceDelay = 120;
 
 Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
 
-// Define menu items
-String menuItems[] = {"BT Options", "Flex Sensor", "Graphite Sensor", "Settings"};
-int selectedItem = 0;
-//----------------------------------------------
+String menuItems[] = {"Potentiometer", "Flex Sensor", "Graphite Sensor"}; // Definition of menu items
+int selectedItem = 0; // Menu items are defined from 0 to 2
+/////////////////////////////////////////////////////////////////////////
 
 void setup() {
   Serial.begin(9600);
 
-  //***ENCODER***
-  //----------------------------------------------
-  pinMode(encoderPinA, INPUT_PULLUP); // Use internal pull-up resistors
-  pinMode(encoderPinB, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(encoderPinA), updateEncoder, CHANGE);
-  //----------------------------------------------
 
-  //***OLED***
-  //----------------------------------------------
+  pinMode(encoderPinA, INPUT_PULLUP); // Use internal pull-up resistors for the encoder
+  pinMode(encoderPinB, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(encoderPinB), updateEncoder, RISING); // Whenever the encoderPinB changes state, an interruption occurs.
+  
   if (!ecranOLED.begin(SSD1306_SWITCHCAPVCC, adresseI2CecranOLED))
     while (1); // Program stops (infinite loop) if something goes wrong here
 
   ecranOLED.clearDisplay();
   ecranOLED.setTextColor(SSD1306_WHITE);
-  //----------------------------------------------
 }
 
 void loop() {
   displayMenu();
   handleMenuNavigation();
-  encoderValue = abs(encoderValue % 4); 
-  Serial.println(encoderValue);
-  if ((encoderValue - lastEncoderValue) > 0) { // if we want to select the next element in the menu
-    if (selectedItem < 3) {
-      selectedItem++;
+  encoderValue = abs(encoderValue % 3); 
+  Serial.println(encoderValue); // to debug
+  if (encoderValue != lastEncoderValue) { // if we turn the encoder, then the selectedItem variable is increased
+    selectedItem++;
+    if (selectedItem == 3) {
+      selectedItem = 1; // if we reach the last element from the menu, the selectedItem is reset to the first element
     }
   }
-  else if (encoderValue - lastEncoderValue < 0) { // if we want to select the previous element in the menu
-    if (selectedItem > 0) {
-      selectedItem--;
-    }
-  }
+  
   lastEncoderValue = encoderValue; 
   Serial.println("Selected:" + String(selectedItem));
   delay(200);
