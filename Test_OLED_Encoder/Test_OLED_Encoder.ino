@@ -5,18 +5,18 @@
 #define encoderPinA 2 // CLK Output A
 #define encoderPinB 4 // DT Output B
 #define Switch 5 // Switch connection
+#define nombreDePixelsEnLargeur 128 // Parameters for the OLED screen
+#define nombreDePixelsEnHauteur 64
+#define brocheResetOLED -1
+#define adresseI2CecranOLED 0x3C
 
-volatile int lastEncoded = 0;
 volatile long encoderValue = 0;
 long lastEncoderValue = 0;
 
 long lastDebounceTime = 0;
 long debounceDelay = 120;
+bool enterMenu = false; 
 
-#define nombreDePixelsEnLargeur 128
-#define nombreDePixelsEnHauteur 64
-#define brocheResetOLED -1
-#define adresseI2CecranOLED 0x3C
 
 Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
 
@@ -26,22 +26,19 @@ int selectedItem = 0; // Menu items are defined from 0 to 2
 
 void setup() {
   Serial.begin(9600);
-
-
   pinMode(encoderPinA, INPUT_PULLUP); // Use internal pull-up resistors for the encoder
   pinMode(encoderPinB, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(encoderPinB), updateEncoder, RISING); // Whenever the encoderPinB changes state, an interruption occurs.
-  
+  attachInterrupt(digitalPinToInterrupt(Switch), switchButton, RISING); // Whenever the switch button is pressed, an interruption is raised
   if (!ecranOLED.begin(SSD1306_SWITCHCAPVCC, adresseI2CecranOLED))
     while (1); // Program stops (infinite loop) if something goes wrong here
-
   ecranOLED.clearDisplay();
   ecranOLED.setTextColor(SSD1306_WHITE);
 }
 
 void loop() {
   displayMenu();
-  handleMenuNavigation();
+  handleMenuItemSelection();
   encoderValue = abs(encoderValue % 3); 
   Serial.println(encoderValue); // To debug
   if (encoderValue != lastEncoderValue) { // If we turn the encoder, then the selectedItem variable is increased
@@ -69,22 +66,21 @@ void displayMenu() {
 }
 
 
-// Example function to handle menu item selection
 void handleMenuItemSelection(int selectedItem) {
   // Implement actions for each menu item
   switch (selectedItem) {
-    case 0:
-      // Action for Item 1
-      break;
     case 1:
-      // Action for Item 2
-      break;
+      if (enterMenu) { // For each case, if the switch button was pressed, we enter each menu respectively
+      
+      }
     case 2:
-      // Action for Item 3
-      break;
+      if (enterMenu) {
+        
+      }
     case 3:
-      // Action for Item 4
-      break;
+      if (enterMenu) {
+        
+      }
     default:
       break;
   }
@@ -99,9 +95,15 @@ void updateEncoder() {
   }
 }
 
-// Debouncing logic
-  //long currentTime = millis();
-  //if (currentTime - lastDebounceTime > debounceDelay) {
-    //lastDebounceTime = currentTime;
-    //lastEncoded = encoded;
-  //}
+void switchButton() {
+  // Debouncing logic for the switch button
+  long currentTime = millis();
+  lastDebounceTime = currentTime;
+  while (currentTime - lastDebounceTime < debounceDelay) {
+    currentTime = millis(); // The function waits for the debounce delay to pass, and then we read the value of the switch again
+  }
+  if (Switch == HIGH) { // If, after the debounce delay, the Switch is still high, we have effectively pressed the button
+    enter_menu = true; // We enter the menu we were currently in
+  }
+}
+
