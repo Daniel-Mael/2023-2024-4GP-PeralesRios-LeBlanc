@@ -21,6 +21,7 @@ Description of the project:
 // Parameter definition
 /////////////////////////////////////////////////////////////////////////
 
+// We define the value of the pins
 #define encoderPinA 2 // CLK Output A
 #define encoderPinB 4 // DT Output B
 #define Switch 5 // Switch connection
@@ -28,16 +29,25 @@ Description of the project:
 #define nombreDePixelsEnHauteur 64
 #define brocheResetOLED -1
 #define adresseI2CecranOLED 0x3C
+
+Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
+
+// Constants and variables definition
+const int flexPin = A1;      // pin connected to voltage divider output
+const float VCC = 5.0;      // voltage at Ardunio 5V line
+const float R_DIV = 56000.0;  // resistor used to create a voltage divider
+const float flatResistance = 31000.0; // resistance when flat
+const float bendResistance = 67000.0;  // resistance at 90 deg bending
 volatile long encoderValue = 0;
 long lastEncoderValue = 0;
 long lastDebounceTime = 0;
 long debounceDelay = 120;
-bool action = false; 
-Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
+long valuePot = 0; // Potentiometer value; 
+bool action = false; // This variable becomes true whenever the switch button is pressed, false otherwise
 String menuItems[] = {"Potentiometer", "Flex Sensor", "Graphite Sensor"}; // Definition of menu items
 String potentiometerItems[] = {"Potentiometer reading", "Current value:"}; // Definition of items in the potentiometer screen
+String flexItems[] = {"Flex sensor reading", "Current value:"}; // Definition of items in the flex sensor screen
 int selectedItem = 0; // Menu items are defined from 0 to x (depending on the menu)
-long valuePot = 0; // Potentiometer value; 
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -99,7 +109,7 @@ void handleMenuItemSelection(int selectedItem) {
       }
     case 1: // Flex sensor reading and display using a dedicated function
       if (action) {
-        
+        displayFlexSensor(valueFlex); 
       }
     case 2: // Graphite sensor reading and display using a dedicated function
       if (action) {
@@ -147,7 +157,24 @@ void displayPotentiometer(int valuePot) {
         ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
         }
         ecranOLED.setCursor(0, i * 10); // Adjust position for each item
-        ecranOLED.print(menuItems[i]); // Print each element
+        ecranOLED.print(potentiometerItems[i]); // Print each element
+    }
+    ecranOLED.display();
+}
+
+
+
+void displayFlexSensor(int valueFlex) {
+    selectedItem = 0; 
+    ecranOLED.clearDisplay();
+    for (int i = 0; i < sizeof(flexItems) / sizeof(flexItems[0]); i++) {
+        if (i == selectedItem) {
+        ecranOLED.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Highlight selected item
+        } else {
+        ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
+        }
+        ecranOLED.setCursor(0, i * 10); // Adjust position for each item
+        ecranOLED.print(potentiometerItems[i]); // Print each element
     }
     ecranOLED.display();
 }
