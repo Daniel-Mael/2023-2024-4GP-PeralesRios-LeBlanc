@@ -15,7 +15,7 @@ long lastEncoderValue = 0;
 
 long lastDebounceTime = 0;
 long debounceDelay = 120;
-bool enterMenu = false; 
+bool action = false; 
 
 
 Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
@@ -103,7 +103,7 @@ void switchButton() {
     currentTime = millis(); // The function waits for the debounce delay to pass, and then we read the value of the switch again
   }
   if (Switch == HIGH) { // If, after the debounce delay, the Switch is still high, we have effectively pressed the button
-    enterMenu = true; // We enter the menu we were currently in
+    action = true; // We choose the selected option
   }
 }
 
