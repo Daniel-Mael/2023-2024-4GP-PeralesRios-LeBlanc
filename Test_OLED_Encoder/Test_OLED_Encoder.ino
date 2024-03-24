@@ -43,17 +43,15 @@ void loop() {
   displayMenu();
   handleMenuNavigation();
   encoderValue = abs(encoderValue % 3); 
-  Serial.println(encoderValue); // to debug
-  if (encoderValue != lastEncoderValue) { // if we turn the encoder, then the selectedItem variable is increased
+  Serial.println(encoderValue); // To debug
+  if (encoderValue != lastEncoderValue) { // If we turn the encoder, then the selectedItem variable is increased
     selectedItem++;
     if (selectedItem == 3) {
-      selectedItem = 1; // if we reach the last element from the menu, the selectedItem is reset to the first element
+      selectedItem = 1; // If we reach the last element from the menu, the selectedItem is reset to the first element
     }
-  }
-  
-  lastEncoderValue = encoderValue; 
-  Serial.println("Selected:" + String(selectedItem));
-  delay(200);
+  }  
+  Serial.println("Selected:" + String(selectedItem)); // To debug
+  delay(150); // We add a delay between loops for stability, while still having a responsive display
 }
 
 void displayMenu() {
@@ -65,14 +63,11 @@ void displayMenu() {
       ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
     }
     ecranOLED.setCursor(0, i * 10); // Adjust position for each item
-    ecranOLED.print(menuItems[i]);
+    ecranOLED.print(menuItems[i]); // Print each element
   }
   ecranOLED.display();
 }
 
-void handleMenuNavigation() {
-  // Implement code to handle encoder rotation and button press to navigate the menu
-}
 
 // Example function to handle menu item selection
 void handleMenuItemSelection(int selectedItem) {
@@ -96,22 +91,17 @@ void handleMenuItemSelection(int selectedItem) {
 }
 
 void updateEncoder() {
-  noInterrupts(); // Disable interrupts temporarily
-  int MSB = digitalRead(encoderPinA);
-  int LSB = digitalRead(encoderPinB);
-  int encoded = (MSB << 1) | LSB;
-  int sum = (lastEncoded << 2) | encoded;
-  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
+  if (encoderPinB == HIGH) {
     encoderValue++;
-  } else if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
+  }
+  else {
     encoderValue--;
   }
-
-  // Debouncing logic
-  long currentTime = millis();
-  if (currentTime - lastDebounceTime > debounceDelay) {
-    lastDebounceTime = currentTime;
-    lastEncoded = encoded;
-  }
-  interrupts(); // Re-enable interrupts
 }
+
+// Debouncing logic
+  //long currentTime = millis();
+  //if (currentTime - lastDebounceTime > debounceDelay) {
+    //lastDebounceTime = currentTime;
+    //lastEncoded = encoded;
+  //}
