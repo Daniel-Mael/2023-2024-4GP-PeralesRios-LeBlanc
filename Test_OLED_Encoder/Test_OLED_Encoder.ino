@@ -10,12 +10,12 @@
 #define brocheResetOLED -1
 #define adresseI2CecranOLED 0x3C
 
-volatile long encoderValue = 0;
+volatile unsigned int encoderValue = 0;
 long lastEncoderValue = 0;
 
 long lastDebounceTime = 0;
 long debounceDelay = 120;
-bool action = false; 
+bool button_pressed = false; 
 
 
 Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
@@ -25,26 +25,29 @@ int selectedItem = 0; // Menu items are defined from 0 to 2
 /////////////////////////////////////////////////////////////////////////
 
 void setup() {
-  Serial.begin(9600);
-  pinMode(encoderPinA, INPUT_PULLUP); // Use internal pull-up resistors for the encoder
-  pinMode(encoderPinB, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(encoderPinB), updateEncoder, RISING); // Whenever the encoderPinB changes state, an interruption occurs.
-  attachInterrupt(digitalPinToInterrupt(Switch), switchButton, RISING); // Whenever the switch button is pressed, an interruption is raised
+  pinMode(encoderPinA, INPUT); // Use internal pull-up resistors for the encoder
+  digitalWrite(encoderPinA, HIGH); // Turn on pullup resistor
+  pinMode(encoderPinB, INPUT);
+  digitalWrite(encoderPinB, HIGH); // Turn on pullup resistor
+
+  attachInterrupt(0, updateEncoder, RISING); // Whenever the encoderPinB changes state, an interruption occurs.
+  //attachInterrupt(digitalPinToInterrupt(Switch), switchButton, RISING); // Whenever the switch button is pressed, an interruption is raised
   if (!ecranOLED.begin(SSD1306_SWITCHCAPVCC, adresseI2CecranOLED))
     while (1); // Program stops (infinite loop) if something goes wrong here
   ecranOLED.clearDisplay();
   ecranOLED.setTextColor(SSD1306_WHITE);
+  Serial.begin(9600);
 }
 
 void loop() {
   displayMenu();
-  handleMenuItemSelection(selectedItem);
+  //handleMenuItemSelection(selectedItem);
   encoderValue = abs(encoderValue % 3); 
   Serial.println(encoderValue); // To debug
   if (encoderValue != lastEncoderValue) { // If we turn the encoder, then the selectedItem variable is increased
     selectedItem++;
     if (selectedItem == 3) {
-      selectedItem = 1; // If we reach the last element from the menu, the selectedItem is reset to the first element
+      selectedItem = 0; // If we reach the last element from the menu, the selectedItem is reset to the first element
     }
   } 
   lastEncoderValue = encoderValue; // The last value from the encoder is updated
@@ -71,15 +74,15 @@ void handleMenuItemSelection(int selectedItem) {
   // Implement actions for each menu item
   switch (selectedItem) {
     case 1:
-      if (enterMenu) { // For each case, if the switch button was pressed, we enter each menu respectively
+      if (button_pressed) { // For each case, if the switch button was pressed, we enter each menu respectively
       
       }
     case 2:
-      if (enterMenu) {
+      if (button_pressed) {
         
       }
     case 3:
-      if (enterMenu) {
+      if (button_pressed) {
         
       }
     default:
@@ -88,7 +91,7 @@ void handleMenuItemSelection(int selectedItem) {
 }
 
 void updateEncoder() {
-  if (encoderPinB == HIGH) {
+  if (digitalRead(encoderPinB) == HIGH) {
     encoderValue++;
   }
   else {
@@ -104,7 +107,7 @@ void switchButton() {
     currentTime = millis(); // The function waits for the debounce delay to pass, and then we read the value of the switch again
   }
   if (Switch == HIGH) { // If, after the debounce delay, the Switch is still high, we have effectively pressed the button
-    action = true; // We choose the selected option
+    button_pressed = true; // We choose the selected option
   }
 }
 

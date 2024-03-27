@@ -17,7 +17,8 @@ Description of the project:
 // Definition of the libraries used in the code
 #include <Adafruit_SSD1306.h>
 #include <SPI.h>
-
+hola, probando
+Serial.println
 // Parameter definition
 /////////////////////////////////////////////////////////////////////////
 
