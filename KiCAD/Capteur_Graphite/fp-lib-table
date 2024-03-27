@@ -1,0 +1,5 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "Arduino_MountingHole")(type "KiCad")(uri "${KICAD7_TEMPLATE_DIR}/Arduino_Mega/Arduino_MountingHole.pretty")(options "")(descr ""))
+  (lib (name "Library_empreinte_graphite")(type "KiCad")(uri "U:/Windows/Bureau/Projet MOSH/KiCAD/Library_empreinte_graphite.pretty")(options "")(descr ""))
+)
