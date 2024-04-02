@@ -17,8 +17,8 @@ Description of the project:
 // Definition of the libraries used in the code
 #include <Adafruit_SSD1306.h>
 #include <SPI.h>
-hola, probando
-Serial.println
+
+
 // Parameter definition
 /////////////////////////////////////////////////////////////////////////
 
@@ -42,13 +42,13 @@ const float bendResistance = 67000.0;  // resistance at 90 deg bending
 volatile long encoderValue = 0;
 long lastEncoderValue = 0;
 long lastDebounceTime = 0;
-long debounceDelay = 120;
+long debounceDelay = 10;
 long valuePot = 0; // Potentiometer value; 
-bool action = false; // This variable becomes true whenever the switch button is pressed, false otherwise
+bool button_pressed = false; // This variable becomes true whenever the switch button is pressed, false otherwise
 bool MainMenu = true; // This bool is true when we are in the main menu, false otherwise. Useful to avoid bugs
-String menuItems[] = {"Potentiometer", "Flex Sensor", "Graphite Sensor"}; // Definition of menu items
-String potentiometerItems[] = {"Potentiometer reading", "Current value:", "BACK"}; // Definition of items in the potentiometer screen
-String flexItems[] = {"Flex sensor reading", "Resistance value:", "", "Bend angle:", "", "BACK"}; // Definition of items in the flex sensor screen
+const char* menuItems[] = {"Potentiometer", "Flex Sensor", "Graphite Sensor"}; // Definition of menu items. We avoid using String, as they are memory-intensive, and we use a more C-style constant.
+const char* potentiometerItems[] = {"Potentiometer reading", "Current value:", "", "", "BACK"}; // Definition of items in the potentiometer screen
+const char* flexItems[] = {"Flex sensor reading", "Resistance value:", "", "Bend angle:", "", "BACK"}; // Definition of items in the flex sensor screen
 int selectedItem = 0; // Menu items are defined from 0 to x (depending on the menu)
 float Rflex = 0; 
 float angle = 0; 
@@ -59,10 +59,13 @@ float angle = 0;
 
 void setup() {
     Serial.begin(9600);
-    pinMode(encoderPinA, INPUT_PULLUP); // Use internal pull-up resistors for the encoder
-    pinMode(encoderPinB, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(encoderPinB), updateEncoder, RISING); // Whenever the encoderPinB changes state, an interruption occurs.
-    attachInterrupt(digitalPinToInterrupt(Switch), switchButton, RISING); // Whenever the switch button is pressed, an interruption is raised
+    pinMode(encoderPinA, INPUT); // Use internal pull-up resistors for the encoder
+    digitalWrite(encoderPinA, HIGH); // Turn on pullup resistor
+    pinMode(encoderPinB, INPUT);
+    digitalWrite(encoderPinB, HIGH); // Turn on pullup resistor
+
+    attachInterrupt(0, updateEncoder, CHANGE); // Whenever the encoderPinB changes state, an interruption occurs.
+    attachInterrupt(digitalPinToInterrupt(Switch), switchButton, CHANGE); // Whenever the switch button is pressed, an interruption is raised
     
     if (!ecranOLED.begin(SSD1306_SWITCHCAPVCC, adresseI2CecranOLED))
         while (1); // Program stops (infinite loop) if something goes wrong here
@@ -77,8 +80,7 @@ void setup() {
 void loop() {
     if (MainMenu) {
         displayMenu();
-        updateEncoder((sizeof(menuItems) / sizeof(menuItems[0])));  // The number of items of a list is defined as the number of bytes of the
-                                                                    // whole list divided by the bytes occupied by one element
+        adaptEncoderValue(encoderValue, (sizeof(menuItems) / sizeof(menuItems[0])));
     }
     else {
         handleMenuItemSelection(selectedItem);
@@ -87,7 +89,7 @@ void loop() {
     float Vflex = (ADCflex / 1024.0) * VCC;
     Rflex = R_DIV * (VCC / Vflex - 1.0); // Flex sensor: we calculate the approximate resistance value
     angle = map(Rflex, flatResistance, bendResistance, 0, 90.0);  // Flex sensor: use the calculated resistance to estimate the 
-                                                                        // sensor's bend angle
+                                                                  // sensor's bend angle
     delay(200); // We add a delay between loops for stability, while still having a responsive display
 }
 
@@ -113,18 +115,20 @@ void handleMenuItemSelection(int selectedItem) {
   // Implement actions for each menu item
   switch (selectedItem) { // For each case, if the switch button was pressed, we enter each menu respectively
     case 0: // Potentiometer setting using a dedicated function
-      if (action) {
+      if (button_pressed) {
         displayPotentiometer(valuePot);
-        updateEncoder(sizeof(potentiometerItems) / sizeof(potentiometerItems[0])); 
+        adaptEncoderValue(encoderValue, sizeof(potentiometerItems) / sizeof(potentiometerItems[0])); 
+        break;
       }
     case 1: // Flex sensor reading and display using a dedicated function
-      if (action) {
-        displayFlexSensor(valueFlex); 
-        updateEncoder(sizeof(flexItems) / sizeof(flexItems[0])); 
+      if (button_pressed) {
+        //displayFlexSensor(valueFlex); 
+        adaptEncoderValue(encoderValue, sizeof(flexItems) / sizeof(flexItems[0]));
+        break; 
       }
     case 2: // Graphite sensor reading and display using a dedicated function
-      if (action) {
-        
+      if (button_pressed) {
+        break;
       }
     default:
       break;
@@ -133,30 +137,33 @@ void handleMenuItemSelection(int selectedItem) {
 
 
 
-void updateEncoder(int NumberOfItems) {
+void updateEncoder() {
     /*
     This function allows to control the menu when the rotary encoder is turned. This function takes as input the 
     number of elements of each menu to modify the last element than can be selected accordingly.
     */
 
-    if (encoderPinB == HIGH) {
+    if (digitalRead(encoderPinB) == HIGH) {
         encoderValue++;
     }
     else {
         encoderValue--;
     }
-    encoderValue = abs(encoderValue % 3); 
-    Serial.println(encoderValue); // To debug
-    if (encoderValue != lastEncoderValue) { // If we turn the encoder, then the selectedItem variable is increased
-        selectedItem++;
-        if (selectedItem == NumberOfItems) {
-            selectedItem = 0; // If we reach the last element from the menu, the selectedItem is reset to the first element
-        }  
-        Serial.println("Selected:" + String(selectedItem)); // To debug
-    }
-    lastEncoderValue = encoderValue; // The last value from the encoder is updated
 }
 
+
+void adaptEncoderValue(int encoderValue, int NumberOfItems) {
+  encoderValue = abs(encoderValue % NumberOfItems); 
+  Serial.println(encoderValue); // To debug
+  if (encoderValue != lastEncoderValue) { // If we turn the encoder, then the selectedItem variable is increased
+      selectedItem++;
+      if (selectedItem == NumberOfItems) {
+          selectedItem = 0; // If we reach the last element from the menu, the selectedItem is reset to the first element
+      }  
+      Serial.println("Selected:" + String(selectedItem)); // To debug
+  }
+  lastEncoderValue = encoderValue; // The last value from the encoder is updated
+}
 
 
 void switchButton() {
@@ -164,16 +171,12 @@ void switchButton() {
   This function controls the reading of the switch button. It has debouncing logic to minimize bad readings.
   */
 
-  long currentTime = millis();
-  lastDebounceTime = currentTime;
-  while (currentTime - lastDebounceTime < debounceDelay) {
-    currentTime = millis(); // The function waits for the debounce delay to pass, and then we read the value of the switch again
-  }
-  if (Switch == HIGH) { // If, after the debounce delay, the Switch is still high, we have effectively pressed the button
-    action = true; // We choose the selected option
+  if (digitalRead(Switch) == HIGH) {
+    Serial.println("pressed");
+    button_pressed = true;
     if (MainMenu) {
-        MainMenu = false; // If we were in the main menu, we set this variable to false so then the option and not the menu is displayed
-        selectedItem = 0; // We reset selectedItem to 0 so we can control the different menus with this same variable
+      MainMenu = false; // If we were in the main menu, we set this variable to false so then the option and not the menu is displayed
+      selectedItem = 0; // We reset selectedItem to 0 so we can control the different menus with this same variable
     }
   }
 }
@@ -203,8 +206,9 @@ void displayPotentiometer(int valuePot) {
 
 void displayFlexSensor(int valueFlex) {
     ecranOLED.clearDisplay();
-    flexItems[2] = Rflex; // Update the values of the resistance and the angle of the flex sensor
-    flexItems[4] = angle; 
+    dtostrf(Rflex, 6, 2, flexItems[2]);
+    //flexItems[2] = (Rflex); // Update the values of the resistance and the angle of the flex sensor
+    //flexItems[4] = (angle); 
     for (int i = 0; i < sizeof(flexItems) / sizeof(flexItems[0]); i++) {
         ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
         ecranOLED.setCursor(0, i * 10); // Adjust position for each item
@@ -212,4 +216,3 @@ void displayFlexSensor(int valueFlex) {
     }
     ecranOLED.display();
 }
-
