@@ -23,10 +23,10 @@ Description of the project:
 /////////////////////////////////////////////////////////////////////////
 
 // We define the value of the pins
-#define encoderPinA 2 // CLK Output A
-#define encoderPinB 4 // DT Output B
-#define Switch 5 // Switch connection
-#define nombreDePixelsEnLargeur 128 // Parameters for the OLED screen
+#define encoderPinA 2                   // CLK Output A
+#define encoderPinB 4                   // DT Output B
+#define Switch 5                        // Switch connection
+#define nombreDePixelsEnLargeur 128     // Parameters for the OLED screen
 #define nombreDePixelsEnHauteur 64
 #define brocheResetOLED -1
 #define adresseI2CecranOLED 0x3C
@@ -34,18 +34,18 @@ Description of the project:
 Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
 
 // Constants and variables definition
-const int flexPin = A1;      // pin connected to voltage divider output
-const float VCC = 5.0;      // voltage at Ardunio 5V line
-const float R_DIV = 56000.0;  // resistor used to create a voltage divider
-const float flatResistance = 31000.0; // resistance when flat
-const float bendResistance = 67000.0;  // resistance at 90 deg bending
+const int flexPin = A1;                 // pin connected to voltage divider output
+const float VCC = 5.0;                  // voltage at Ardunio 5V line
+const float R_DIV = 56000.0;            // resistor used to create a voltage divider
+const float flatResistance = 31000.0;   // resistance when flat
+const float bendResistance = 67000.0;   // resistance at 90 deg bending
 volatile long encoderValue = 0;
 long lastEncoderValue = 0;
 long lastDebounceTime = 0;
 long debounceDelay = 10;
-long valuePot = 0; // Potentiometer value; 
-bool button_pressed = false; // This variable becomes true whenever the switch button is pressed, false otherwise
-bool MainMenu = true; // This bool is true when we are in the main menu, false otherwise. Useful to avoid bugs
+long valuePot = 0;                      // Potentiometer value;
+bool button_pressed = false;            // This variable becomes true whenever the switch button is pressed, false otherwise
+bool MainMenu = true;                   // This bool is true when we are in the main menu, false otherwise. Useful to avoid bugs
 const char* menuItems[] = {"Potentiometer", "Flex Sensor", "Graphite Sensor"}; // Definition of menu items. We avoid using String, as they are memory-intensive, and we use a more C-style constant.
 const char* potentiometerItems[] = {"Potentiometer reading", "Current value:", "", "", "BACK"}; // Definition of items in the potentiometer screen
 const char* flexItems[] = {"Flex sensor reading", "Resistance value:", "", "Bend angle:", "", "BACK"}; // Definition of items in the flex sensor screen
@@ -60,15 +60,15 @@ float angle = 0;
 void setup() {
     Serial.begin(9600);
     pinMode(encoderPinA, INPUT); // Use internal pull-up resistors for the encoder
-    digitalWrite(encoderPinA, HIGH); // Turn on pullup resistor
+    digitalWrite(encoderPinA, HIGH); // Turn on pull-up resistor
     pinMode(encoderPinB, INPUT);
-    digitalWrite(encoderPinB, HIGH); // Turn on pullup resistor
+    digitalWrite(encoderPinB, HIGH); // Turn on pull-up resistor
 
     attachInterrupt(0, updateEncoder, CHANGE); // Whenever the encoderPinB changes state, an interruption occurs.
     attachInterrupt(digitalPinToInterrupt(Switch), switchButton, CHANGE); // Whenever the switch button is pressed, an interruption is raised
     
     if (!ecranOLED.begin(SSD1306_SWITCHCAPVCC, adresseI2CecranOLED))
-        while (1); // Program stops (infinite loop) if something goes wrong here
+        while (1); // If the screen doesn't start, the program stays blocked here forever
         
     pinMode(flexPin, INPUT);
     ecranOLED.clearDisplay();
@@ -175,7 +175,7 @@ void switchButton() {
     Serial.println("pressed");
     button_pressed = true;
     if (MainMenu) {
-      MainMenu = false; // If we were in the main menu, we set this variable to false so then the option and not the menu is displayed
+      MainMenu = false; // If we were in the main menu, we set this variable to false so then the option, and not the menu, is displayed
       selectedItem = 0; // We reset selectedItem to 0 so we can control the different menus with this same variable
     }
   }
