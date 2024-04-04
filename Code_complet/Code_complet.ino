@@ -30,10 +30,14 @@ Description of the project:
 #define nombreDePixelsEnHauteur 64
 #define brocheResetOLED -1
 #define adresseI2CecranOLED 0x3C
+#define MCP_NOP 0b00000000              // Parameters for the digital potentiometer
+#define MCP_WRITE 0b00010001
+#define MCP_SHTDWN 0b00100001
 
 Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
 
 // Constants and variables definition
+const int ssMCPin = 10;                 // Define the slave select for the digital potentiometer
 const int flexPin = A1;                 // pin connected to voltage divider output
 const float VCC = 5.0;                  // voltage at Ardunio 5V line
 const float R_DIV = 56000.0;            // resistor used to create a voltage divider
@@ -57,6 +61,10 @@ int selectMenu = 0; // Menu items are defined from 0 to x (depending on the menu
 int selectItem = 0; // Item selection in each menu
 float Rflex = 0; 
 float angle = 0; 
+float rWiper = 125;
+float max_value_pot = 50000;           // Maximum resistance for the digital potentiometer (we supposed here 100k)
+float pot_step = max_value_pot/256;     // Minimal resistance variation for the digital potentiometer, since we have 8 bits (the max value equals then 255)
+float R2 = 10*pot_step;                 // We set up the value of the digital potentiometer at a default value
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -70,6 +78,10 @@ void setup() {
     digitalWrite(encoderPinB, HIGH); // Turn on pull-up resistor
     pinMode(Switch, INPUT);
     digitalWrite(Switch, HIGH); // Turn on pull-up resistor
+
+    pinMode(ssMCPin, OUTPUT);
+    digitalWrite(ssMCPin, HIGH);          // SPI chip disabled
+    SPI.begin();
 
     attachInterrupt(0, updateEncoder, CHANGE); // Whenever we turn the rotary encoder, an interruption occurs.
     
@@ -86,7 +98,7 @@ void setup() {
 void loop() {
     if (MainMenu) {
         displayMenu();
-        adaptEncoderValue(encoderValue, (sizeof(menuItems) / sizeof(menuItems[0])));
+        updateSelectedItem(encoderValue, (sizeof(menuItems) / sizeof(menuItems[0])));
         switchButton();
     }
     else {
@@ -125,7 +137,7 @@ void handleMenuItemSelection(int selectMenu) {
     case 0: // Potentiometer setting using a dedicated function 
       selectItem = 0;
       displayPotentiometer(valuePot);
-      adaptEncoderValue(encoderValue, sizeof(potentiometerItems) / sizeof(potentiometerItems[0])); 
+      updateSelectedItem(encoderValue, sizeof(potentiometerItems) / sizeof(potentiometerItems[0])); 
       break;
     case 1: // Flex sensor reading and display using a dedicated function
       selectItem = 0;
@@ -157,7 +169,7 @@ void updateEncoder() {
 }
 
 
-void adaptEncoderValue(int encoderValue, int NumberOfItems) {
+void updateSelectedItem(int encoderValue, int NumberOfItems) {
   encoderValue = abs(encoderValue % NumberOfItems); 
   Serial.println(encoderValue); // To debug
   if (encoderValue != lastEncoderValue) { // If we turn the encoder, then the selectedItem variable is increased
@@ -168,6 +180,23 @@ void adaptEncoderValue(int encoderValue, int NumberOfItems) {
       Serial.println("Selected:" + String(selectMenu)); // To debug
   }
   lastEncoderValue = encoderValue; // The last value from the encoder is updated
+}
+
+
+void SPIWrite(uint8_t cmd, uint8_t data, uint8_t ssPin) {
+  /*
+  This function controls the communication between the Arduino and the digital potentiometer
+  */
+
+  // https://www.arduino.cc/en/Reference/SPISettings
+
+  R2 = ((max_value_pot * data) / 256 ) + rWiper;
+  SPI.beginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));
+  digitalWrite(ssPin, LOW);   // SS pin low to select chip
+  SPI.transfer(cmd);          // Send command code
+  SPI.transfer(data);         // Send associated value
+  digitalWrite(ssPin, HIGH);  // SS pin high to de-select chip
+  SPI.endTransaction();
 }
 
 
@@ -223,11 +252,15 @@ void displayPotentiometer(int valuePot) {
     */
 
     ecranOLED.clearDisplay();
+    SPIWrite(MCP_WRITE, 250, ssMCPin);
+    dtostrf(pot_step, 6, 2, potentiometerItems[2]); // Display the value of the minimal increase in the pot resistance
+    dtostrf(R2, 6, 2, potentiometerItems[4]);       // Update the value of the potentiometer resistance, which is set at the beginning at a default value
     for (int i = 0; i < sizeof(potentiometerItems) / sizeof(potentiometerItems[0]); i++) {
-        ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for the items
+        ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
         ecranOLED.setCursor(0, i * 10); // Adjust position for each item
         ecranOLED.print(potentiometerItems[i]); // Print each element
     }
+    switchButton();
     ecranOLED.display();
 }
 
@@ -251,8 +284,7 @@ void displayGraphiteSensor() {
     ecranOLED.clearDisplay();
     ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
     ecranOLED.setCursor(0, 0);
-    ecranOLED.print("Graphite sensor: " + String(5000) + "ohms"); 
-    
+    ecranOLED.print("Graphite sensor: " + String(5000) + "ohms");     
     switchButton();
     ecranOLED.display();
 }
