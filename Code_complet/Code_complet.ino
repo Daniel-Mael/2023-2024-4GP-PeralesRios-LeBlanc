@@ -227,21 +227,6 @@ void switchButton() {
     // Reset button_pressed if the button is released
     button_pressed = false;
   }
-  }
-
-
-
-    //if (digitalRead(Switch) == LOW){ 
-      //Serial.println("pressed");
-      //button_pressed = true;
-      //if (MainMenu) {
-        //MainMenu = false; // If we were in the main menu, we set this variable to false so then the option, and not the menu, is displayed
-      //}
-      //else {
-        //MainMenu = true;
-      //}
-    //}
-    //delay(100); 
 }
 
 
