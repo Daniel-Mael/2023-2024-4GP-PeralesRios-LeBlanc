@@ -56,20 +56,18 @@ long debounceDelay = 40;                // the debounce time; increase if the ou
 bool button_pressed = false;            // This variable becomes true whenever the switch button is pressed, false otherwise
 bool MainMenu = true;                   // This bool is true when we are in the main menu, false otherwise. Useful to avoid bugs
 const char* menuItems[] = {"Potentiometer", "Flex Sensor", "Graphite Sensor"}; // Definition of menu items. We avoid using String, as they are memory-intensive, and we use a more C-style constant.
-const char* potentiometerItems[] = {"DigiPot (50k) setting", "Value R2:", "", "BACK"};         // Definition of items in the potentiometer screen
-const char* flexItems[] = {"Flex sensor reading", "Resistance value:", "", "Bend angle:", "", "BACK"}; // Definition of items in the flex sensor screen
-int selectMenu = 0; // Menu items are defined from 0 to x (depending on the menu)
-int selectItem = 0; // Item selection in each menu
+const char* potentiometerItems[] = {"DigiPot (50k) setting", "Value R2:", "", "BACK"};                  // Definition of items in the potentiometer screen
+const char* flexItems[] = {"Flex sensor reading", "Resistance value:", "", "Bend angle:", "", "BACK"};  // Definition of items in the flex sensor screen
+int selectMenu = 0;                     // Menu items are defined from 0 to x (depending on the menu)
+int selectItem = 0;                     // Item selection in each menu
 float Rflex = 0; 
 float angle = 0; 
 float rWiper = 125;
-float max_value_pot = 50000;           // Maximum resistance for the digital potentiometer (we supposed here 100k)
+float max_value_pot = 50000;            // Maximum resistance for the digital potentiometer (we supposed here 100k)
 int valuePot = 15;                      // valeur initiale envoyée au potentiomètre
-float pot_step = max_value_pot/256;     // Minimal resistance variation for the digital potentiometer, since we have 8 bits (the max value equals then 255)
-float R2 = 10*pot_step;                 // We set up the value of the digital potentiometer at a default value
+float R2 = (10/256)*max_value_pot;      // We set up the value of the digital potentiometer at a default value
 
 /////////////////////////////////////////////////////////////////////////
-
 
 
 void setup() {
@@ -85,7 +83,7 @@ void setup() {
     digitalWrite(ssMCPin, HIGH);          // SPI chip disabled
     SPI.begin();
 
-    attachInterrupt(0, updateEncoder, CHANGE); // Whenever we turn the rotary encoder, an interruption occurs.
+    attachInterrupt(0, updateEncoder, CHANGE);  // Whenever we turn the rotary encoder, an interruption occurs.
     
     if (!ecranOLED.begin(SSD1306_SWITCHCAPVCC, adresseI2CecranOLED))
         while (1); // If the screen doesn't start, the program stays blocked here forever
