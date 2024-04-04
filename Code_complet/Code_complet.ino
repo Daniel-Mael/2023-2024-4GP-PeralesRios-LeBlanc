@@ -175,19 +175,28 @@ void switchButton() {
   /*
   This function controls the reading of the switch button. It has debouncing logic to minimize bad readings.
   */
-  if (digitalRead(Switch) == LOW) {
-    // reset the debouncing timer
+
+  // Check if the switch button is pressed and enough time has passed since the last press
+  if (digitalRead(Switch) == LOW && (millis() - lastDebounceTime) >= debounceDelay) {
+    // Record the time when the button was pressed
     lastDebounceTime = millis();
-    while ((millis() - lastDebounceTime) < debounceDelay) {
-      // whatever the reading is at, it&#039;s been there for longer
-      // than the debounce delay, so take it as the actual current state:
+
+    // Set the button_pressed flag only if it's not already set
+    if (!button_pressed) {
       button_pressed = true;
+
+      // If we were in the main menu, switch to the menu item view
       if (MainMenu) {
-        MainMenu = false; // If we were in the main menu, we set this variable to false so then the option, and not the menu, is displayed
+        MainMenu = false;
+        selectItem = 0;
+      } else {
+        // If we were in a menu item view, switch back to the main menu
+        MainMenu = true;
       }
-    else {
-      MainMenu = true;
     }
+  } else {
+    // Reset button_pressed if the button is released
+    button_pressed = false;
   }
   }
 
