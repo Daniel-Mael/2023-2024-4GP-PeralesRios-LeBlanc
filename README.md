@@ -1,6 +1,6 @@
-# 2023-2024-4gp-name_a-name_b
+# 2023-2024-4gp-Perales_Rios-Le_Blanc
 
-TD Capteur : Name A - Name B
+Projet Capteur 4GP
 
 ## TODO List
 
