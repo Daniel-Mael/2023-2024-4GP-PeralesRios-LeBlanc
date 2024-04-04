@@ -44,25 +44,27 @@ const float R_DIV = 56000.0;            // resistor used to create a voltage div
 const float flatResistance = 31000.0;   // resistance when flat
 const float bendResistance = 67000.0;   // resistance at 90 deg bending
 volatile long encoderValue = 0;
+volatile long encoderValue2 = 0;
 
 int switchState;                        // the current reading from the input pin
 int lastSwitchState = HIGH;             // the previous reading from the input pin (switch is HIGH when we don't press)
-long lastEncoderValue = 0;
+long lastEncoderValue = 0;              // used for the selection of the menu
+long lastValue = 0;                     // used for the digital potentiometer
 long lastDebounceTime = 0;              // the last time the output pin was toggled
 long debounceDelay = 40;                // the debounce time; increase if the output flickers
 
 bool button_pressed = false;            // This variable becomes true whenever the switch button is pressed, false otherwise
 bool MainMenu = true;                   // This bool is true when we are in the main menu, false otherwise. Useful to avoid bugs
 const char* menuItems[] = {"Potentiometer", "Flex Sensor", "Graphite Sensor"}; // Definition of menu items. We avoid using String, as they are memory-intensive, and we use a more C-style constant.
-const char* potentiometerItems[] = {"Potentiometer reading", "Current value:", "", "", "BACK"}; // Definition of items in the potentiometer screen
+const char* potentiometerItems[] = {"DigiPot (50k) setting", "Value R2:", "", "BACK"};         // Definition of items in the potentiometer screen
 const char* flexItems[] = {"Flex sensor reading", "Resistance value:", "", "Bend angle:", "", "BACK"}; // Definition of items in the flex sensor screen
-const char* valuePot [] = {1,2,3,4,5}; // Predefined values for the digital potentiometer
 int selectMenu = 0; // Menu items are defined from 0 to x (depending on the menu)
 int selectItem = 0; // Item selection in each menu
 float Rflex = 0; 
 float angle = 0; 
 float rWiper = 125;
 float max_value_pot = 50000;           // Maximum resistance for the digital potentiometer (we supposed here 100k)
+int valuePot = 15;                      // valeur initiale envoyée au potentiomètre
 float pot_step = max_value_pot/256;     // Minimal resistance variation for the digital potentiometer, since we have 8 bits (the max value equals then 255)
 float R2 = 10*pot_step;                 // We set up the value of the digital potentiometer at a default value
 
@@ -159,15 +161,35 @@ void updateEncoder() {
     This function allows to control the menu when the rotary encoder is turned. This function takes as input the 
     number of elements of each menu to modify the last element than can be selected accordingly.
     */
+    if (MainMenu){
+      if (digitalRead(encoderPinB) == HIGH) {
+          encoderValue++;
+      }
+      else {
+          encoderValue--;
+      }
+    }
+    else if (selectMenu == 0) {
+      if (digitalRead(encoderPinB) == HIGH) {
+          encoderValue2++;
+      }
+      else {
+          encoderValue2--;
+      }
+    }
 
-    if (digitalRead(encoderPinB) == HIGH) {
-        encoderValue++;
-    }
-    else {
-        encoderValue--;
-    }
 }
 
+void updatePotentiometerValue(){
+  if (encoderValue2 != lastValue) { // If we turn the encoder, then the selectedItem variable is increased
+      valuePot = valuePot + 10;
+      if (valuePot>255){
+        valuePot=0;
+      }
+  }
+  lastValue = encoderValue2; // The last value from the encoder is updated
+  valuePot = constrain(valuePot, 0, 255);
+}
 
 void updateSelectedItem(int encoderValue, int NumberOfItems) {
   encoderValue = abs(encoderValue % NumberOfItems); 
@@ -189,7 +211,7 @@ void SPIWrite(uint8_t cmd, uint8_t data, uint8_t ssPin) {
   */
 
   // https://www.arduino.cc/en/Reference/SPISettings
-
+  updatePotentiometerValue();
   R2 = ((max_value_pot * data) / 256 ) + rWiper;
   SPI.beginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));
   digitalWrite(ssPin, LOW);   // SS pin low to select chip
@@ -237,9 +259,8 @@ void displayPotentiometer(int valuePot) {
     */
 
     ecranOLED.clearDisplay();
-    SPIWrite(MCP_WRITE, 250, ssMCPin);
-    dtostrf(pot_step, 6, 2, potentiometerItems[2]); // Display the value of the minimal increase in the pot resistance
-    dtostrf(R2, 6, 2, potentiometerItems[4]);       // Update the value of the potentiometer resistance, which is set at the beginning at a default value
+    SPIWrite(MCP_WRITE, valuePot, ssMCPin);
+    dtostrf(R2, 6, 2, potentiometerItems[2]);       // Update the value of the potentiometer resistance, which is set at the beginning at a default value
     for (int i = 0; i < sizeof(potentiometerItems) / sizeof(potentiometerItems[0]); i++) {
         ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
         ecranOLED.setCursor(0, i * 10); // Adjust position for each item
