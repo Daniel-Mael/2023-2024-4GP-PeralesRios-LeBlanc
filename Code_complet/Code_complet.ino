@@ -34,6 +34,7 @@ Description of the project:
 #define MCP_WRITE 0b00010001
 #define MCP_SHTDWN 0b00100001
 
+
 Adafruit_SSD1306 ecranOLED(nombreDePixelsEnLargeur, nombreDePixelsEnHauteur, &Wire, brocheResetOLED);
 
 // Constants and variables definition
@@ -45,6 +46,13 @@ const float flatResistance = 31000.0;   // resistance when flat
 const float bendResistance = 67000.0;   // resistance at 90 deg bending
 volatile long encoderValue = 0;
 volatile long encoderValue2 = 0;
+
+float calibre = pow(10,-6); // to have Mohms
+float Vadc = 0 ;
+float R3=100000;
+float R1=100000;
+float R5=10000;
+float Rc = 0;
 
 int switchState;                        // the current reading from the input pin
 int lastSwitchState = HIGH;             // the previous reading from the input pin (switch is HIGH when we don't press)
@@ -105,11 +113,18 @@ void loop() {
         handleMenuItemSelection(selectMenu);
         switchButton();
     }
+
+    // Calculation of the Flex sensor's resistance
     int ADCflex = analogRead(flexPin); // Flex sensor: read the ADC, and calculate voltage and resistance from it
     float Vflex = (ADCflex / 1024.0) * VCC;
     Rflex = R_DIV * (VCC / Vflex - 1.0); // Flex sensor: we calculate the approximate resistance value
     angle = map(Rflex, flatResistance, bendResistance, 0, 90.0);  // Flex sensor: use the calculated resistance to estimate the 
                                                                   // sensor's bend angle
+
+    // Calculation of the graphite sensor's resistance 
+    Vadc = analogRead(A0)*5.0/1024.0; // Voltage value of the sensor
+    Rc=(R1*(1+R3/R2)*VCC/Vadc-R1-R5)*calibre; // conversion to resistance
+    
     delay(200); // We add a delay between loops for stability, while still having a responsive display
 }
 
@@ -288,7 +303,7 @@ void displayGraphiteSensor() {
     ecranOLED.clearDisplay();
     ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
     ecranOLED.setCursor(0, 0);
-    ecranOLED.print("Graphite sensor: " + String(5000) + "ohms");     
+    ecranOLED.print("Graphite sensor: " + String(Rc) + "ohms");     
     switchButton();
     ecranOLED.display();
 }
