@@ -1,10 +1,15 @@
 # 2023-2024-4gp-Perales_Rios-Le_Blanc
 
-Projet Capteur à base de graphène 4GP
+L'objectif de ce projet est d'étudier une technologie de capteur low-tech à base de graphite, en nous basant sur la publication "Pencil Drawn Strain Gauges and Chemiresistors on Paper" de Cheng-Wei Lin*, Zhibo Zhao*, Jaemyung Kim & Jiaxing Huang.
+Selon ces travaux de recherche, les particules de graphite, déposées en coloriant une trace de capteur, peuvent agir en jauge de contrainte. 
+Ainsi, ce projet balayera l’ensemble du domaine du capteur jusqu’à la réalisation d’une datasheet et du banc de test associé à ce capteur. 
 
 /// ordre des parties à revoir \\\
+## 1) Livrables
 
-## 1) Matériel nécessaire
+Plusieurs livrables sont attendus pour ce projet. 
+
+## 2) Matériel nécessaire
 
 Pour réaliser ce projet, nous avons eu besoin de : 
   - 
