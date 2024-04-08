@@ -112,22 +112,25 @@ void loop() {
     else {
         handleMenuItemSelection(selectMenu);
         switchButton();
-    }
-
-    // Calculation of the Flex sensor's resistance
-    int ADCflex = analogRead(flexPin); // Flex sensor: read the ADC, and calculate voltage and resistance from it
-    float Vflex = (ADCflex / 1024.0) * VCC;
-    Rflex = R_DIV * (VCC / Vflex - 1.0); // Flex sensor: we calculate the approximate resistance value
-    angle = map(Rflex, flatResistance, bendResistance, 0, 90.0);  // Flex sensor: use the calculated resistance to estimate the 
-                                                                  // sensor's bend angle
-
-    // Calculation of the graphite sensor's resistance 
-    Vadc = analogRead(A0)*5.0/1024.0; // Voltage value of the sensor
-    Rc=(R1*(1+R3/R2)*VCC/Vadc-R1-R5)*calibre; // conversion to resistance
-    
+    }    
     delay(200); // We add a delay between loops for stability, while still having a responsive display
 }
 
+void FlexMeasure() {
+// Calculation of the Flex sensor's resistance
+   int ADCflex = analogRead(flexPin); // Flex sensor: read the ADC, and calculate voltage and resistance from it
+   float Vflex = (ADCflex / 1024.0) * VCC;
+   Rflex = R_DIV * (VCC / Vflex - 1.0); // Flex sensor: we calculate the approximate resistance value
+   angle = map(Rflex, flatResistance, bendResistance, 0, 90.0);  // Flex sensor: use the calculated resistance to estimate the 
+                                                                  // sensor's bend angle
+}
+
+
+void GraphiteMeasure() {
+// Calculation of the graphite sensor's resistance 
+    Vadc = analogRead(A0)*5.0/1024.0; // Voltage value of the sensor
+    Rc=(R1*(1+R3/R2)*VCC/Vadc-R1-R5)*calibre; // conversion to resistance
+}
 
 
 void displayMenu() {
@@ -287,6 +290,7 @@ void displayPotentiometer(int valuePot) {
 
 void displayFlexSensor() {
     ecranOLED.clearDisplay();
+    FlexMeasure();
     dtostrf(Rflex, 6, 2, flexItems[2]); // Update the values of the resistance and the angle of the flex sensor
     dtostrf(angle, 6, 2, flexItems[4]);
     for (int i = 0; i < sizeof(flexItems) / sizeof(flexItems[0]); i++) {
@@ -301,6 +305,7 @@ void displayFlexSensor() {
 
 void displayGraphiteSensor() {
     ecranOLED.clearDisplay();
+    GraphiteMeasure();
     ecranOLED.setTextColor(SSD1306_WHITE); // Regular color for other items
     ecranOLED.setCursor(0, 0);
     ecranOLED.print("Graphite sensor: " + String(Rc) + "ohms");     
